@@ -3,26 +3,28 @@ import * as tf from '@tensorflow/tfjs'
 // import './p5/main'
 
 console.log('::: tfjs version:', tf.version)
-
-// Define a model for linear regression.
-const model = tf.sequential()
-model.add(tf.layers.dense({ units: 1, inputShape: [1] }))
-
-model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' })
-
-// Generate some synthetic data for training.
-const xs = tf.tensor2d([1, 2, 3, 4], [4, 1])
-const ys = tf.tensor2d([1, 3, 5, 7], [4, 1])
-
-// Train the model using the data.
-model.fit(xs, ys, { epochs: 10 }).then(() => {
-    // Use the model to do inference on a data point the model hasn't seen before:
-    model.predict(tf.tensor2d([5], [1, 1])).print()
-    // Open the browser devtools to see the output
-})
-
+console.log('::: tensors:', tf.memory().numTensors)
 console.log('::: tfjs backend:', tf.getBackend())
 
+// .............................................................................
+// Define a model for linear regression.
+// const model = tf.sequential()
+// model.add(tf.layers.dense({ units: 1, inputShape: [1] }))
+
+// model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' })
+
+// // Generate some synthetic data for training.
+// const xs = tf.tensor2d([1, 2, 3, 4], [4, 1])
+// const ys = tf.tensor2d([1, 3, 5, 7], [4, 1])
+
+// // Train the model using the data.
+// model.fit(xs, ys, { epochs: 10 }).then(() => {
+//     // Use the model to do inference on a data point the model hasn't seen before:
+//     model.predict(tf.tensor2d([5], [1, 1])).print()
+//     // Open the browser devtools to see the output
+// })
+
+// .............................................................................
 tf.tidy(() => {
     // scalar
     tf.tensor([87], []).print()
@@ -47,16 +49,33 @@ tf.tidy(() => {
     a.print()
 })
 
-setTimeout(() => {
-    console.log('::: tensors:', tf.memory().numTensors)
+tf.tidy(() => {
+    const xs = tf.tensor1d([1, 2, 3])
+    const ys = xs.mul(tf.scalar(5))
+    ys.print()
+})
 
-    tf.tidy(() => {
-        for (let i = 0; i < 1000; i += 3) {
-            const ts = tf.scalar(2)
-            const t1 = tf.tensor1d([i, i + 1, i + 2])
-            t1.mul(ts)
-        }
-    })
+function getYs(xs, m, c) {
+    const res = xs.mul(m).add(c)
+    res.print()
 
-    console.log('::: tensors:', tf.memory().numTensors)
-}, 2550)
+    return res
+}
+
+tf.tidy(() => {
+    getYs(tf.tensor1d([1, 5, 10]), 2, 1)
+})
+
+tf.tidy(() => {
+    const t3 = tf.tensor1d([25, 76, 4, 23, -5, 22])
+    const max = t3.max() // 76
+    max.print()
+    const min = t3.min() // -5
+    min.print()
+
+    t3.sub(min).div(max.sub(min)).print()
+})
+
+// .............................................................................
+
+console.log('::: tensors:', tf.memory().numTensors)
