@@ -3,11 +3,11 @@ import * as tfvis from '@tensorflow/tfjs-vis'
 
 // import './p5/main'
 
-(async () => {
-    console.log('::: tfjs version:', tf.version)
-    console.log('::: tensors:', tf.memory().numTensors)
-    console.log('::: tfjs backend:', tf.getBackend())
+console.log('::: tfjs version:', tf.version)
+console.log('::: tensors:', tf.memory().numTensors)
+console.log('::: tfjs backend:', tf.getBackend());
 
+(async () => {
     // Standard example ........................................................
     // Define a model for linear regression.
     // const model = tf.sequential()
@@ -108,6 +108,16 @@ import * as tfvis from '@tensorflow/tfjs-vis'
     }))
     plot(await points.toArray(), 'Square feet')
 
+    // Prepare features (inputs)
+    const featureValues = await points.map((point) => point.x).toArray()
+    const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
+    featureTensor.print()
 
+    // Prepare labels (output)
+    const labelValues = await points.map((point) => point.y).toArray()
+    const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
+    labelTensor.print()
+
+    // .........................................................................
     console.log('::: tensors:', tf.memory().numTensors)
 })()
