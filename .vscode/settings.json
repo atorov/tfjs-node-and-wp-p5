@@ -4,12 +4,16 @@
         "camelcase",
         "devtools",
         "eurusd",
+        "living",
         "plusplus",
         "prestart",
         "relu",
+        "scatterplot",
+        "sqft",
         "stroustrup",
         "technicalindicators",
         "tensorflow",
-        "tfjs"
+        "tfjs",
+        "tfvis"
     ]
 }

@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs'
+import * as tfvis from '@tensorflow/tfjs-vis'
 
 // import './p5/main'
 
@@ -78,10 +79,34 @@ import * as tf from '@tensorflow/tfjs'
     // })
 
     // Linear regression example ...............................................
+    async function plot(pointsArray, featureName) {
+        tfvis.render.scatterplot(
+            {
+                name: `${featureName} vs House Price`,
+            },
+            {
+                values: [pointsArray],
+                series: ['original'],
+            },
+            {
+                xLabel: featureName,
+                yLabel: 'Price',
+            },
+        )
+    }
+
+    // Read data from CSV file
     const dataset = tf.data.csv('/data/kc_house_data.csv')
     const sampleDataset = dataset.take(10)
     const sampleArray = await sampleDataset.toArray()
     console.log('::: dataset:', sampleArray)
+
+    // Visualize data
+    const points = dataset.map((record) => ({
+        x: record.sqft_living,
+        y: record.price,
+    }))
+    plot(await points.toArray(), 'Square feet')
 
 
     console.log('::: tensors:', tf.memory().numTensors)
