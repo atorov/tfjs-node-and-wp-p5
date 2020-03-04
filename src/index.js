@@ -79,6 +79,23 @@ console.log('::: tfjs backend:', tf.getBackend());
     // })
 
     // Linear regression example ...............................................
+    function denormalize({ tensor, min, max }) {
+        return tensor.mul(max.sub(min)).add(min)
+    }
+
+    function normalize(tensor) {
+        const min = tensor.min()
+        const max = tensor.max()
+
+        const normalizedTensor = tensor.sub(min).div(max.sub(min))
+
+        return {
+            tensor: normalizedTensor,
+            min,
+            max,
+        }
+    }
+
     async function plot(pointsArray, featureName) {
         tfvis.render.scatterplot(
             {
@@ -111,12 +128,21 @@ console.log('::: tfjs backend:', tf.getBackend());
     // Prepare features (inputs)
     const featureValues = await points.map((point) => point.x).toArray()
     const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
-    featureTensor.print()
 
     // Prepare labels (output)
     const labelValues = await points.map((point) => point.y).toArray()
     const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
-    labelTensor.print()
+
+    // Normalize features (min-max)
+    const normalizedFeatures = normalize(featureTensor)
+    normalizedFeatures.tensor.print()
+
+    // Normalize labels (min-max)
+    const normalizedLabels = normalize(labelTensor)
+    normalizedLabels.tensor.print()
+
+    // ...
+    denormalize(normalizedFeatures).print()
 
     // .........................................................................
     console.log('::: tensors:', tf.memory().numTensors)
