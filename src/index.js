@@ -79,9 +79,9 @@ console.log('::: tfjs backend:', tf.getBackend());
     // })
 
     // Linear regression example ...............................................
-    function denormalize({ tensor, min, max }) {
-        return tensor.mul(max.sub(min)).add(min)
-    }
+    // function denormalize({ tensor, min, max }) {
+    //     return tensor.mul(max.sub(min)).add(min)
+    // }
 
     function normalize(tensor) {
         const min = tensor.min()
@@ -114,35 +114,50 @@ console.log('::: tfjs backend:', tf.getBackend());
 
     // Read data from CSV file
     const dataset = tf.data.csv('/data/kc_house_data.csv')
-    const sampleDataset = dataset.take(10)
-    const sampleArray = await sampleDataset.toArray()
-    console.log('::: dataset:', sampleArray)
+    // const sampleDataset = dataset.take(10)
+    // const sampleArray = await sampleDataset.toArray()
+    // console.log('::: dataset:', sampleArray)
 
-    // Visualize data
-    const points = dataset.map((record) => ({
+    // Extract data
+    const pointsDataset = dataset.map((record) => ({
         x: record.sqft_living,
         y: record.price,
     }))
-    plot(await points.toArray(), 'Square feet')
+
+    // Shuffle data
+    const points = await pointsDataset.toArray()
+    if (points.length % 2) {
+        points.pop()
+    }
+
+    tf.util.shuffle(points)
+
+    // Visualize data
+    plot(points, 'Square feet')
 
     // Prepare features (inputs)
-    const featureValues = await points.map((point) => point.x).toArray()
+    const featureValues = points.map((point) => point.x)
     const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
 
     // Prepare labels (output)
-    const labelValues = await points.map((point) => point.y).toArray()
+    const labelValues = points.map((point) => point.y)
     const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
 
     // Normalize features (min-max)
     const normalizedFeatures = normalize(featureTensor)
-    normalizedFeatures.tensor.print()
 
     // Normalize labels (min-max)
     const normalizedLabels = normalize(labelTensor)
-    normalizedLabels.tensor.print()
+
+    // Slitting into training and testing features data
+    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
+    trainingFeatureTensor.print(true)
+
+    // Slitting into training and testing label data
+    const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
 
     // ...
-    denormalize(normalizedFeatures).print()
+    // denormalize(normalizedFeatures).print()
 
     // .........................................................................
     console.log('::: tensors:', tf.memory().numTensors)
