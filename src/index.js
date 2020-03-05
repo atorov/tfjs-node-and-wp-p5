@@ -136,16 +136,17 @@ console.log('::: tfjs backend:', tf.getBackend());
             onEpochEnd,
         } = tfvis.show.fitCallbacks(
             { name: 'Training Performance' },
-            ['loss'],
+            ['loss', 'val_loss'],
         )
 
         return model.fit(trainingFeatureTensor, trainingLabelTensor, {
             batchSize: 32, // 1024, default: 32
             epochs: 20,
+            validationSplit: 0.2,
             callbacks: {
                 // onBatchEnd,
                 onEpochEnd: (epoch, log) => {
-                    console.log(`::: Epoch ${epoch}: loss = ${log.loss}`)
+                    console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
                     onEpochEnd(epoch, log)
                 },
             },
@@ -207,13 +208,14 @@ console.log('::: tfjs backend:', tf.getBackend());
     const trainingResult = await trainModel(model, trainingFeatureTensor, trainingLabelTensor)
     // console.log('::: Training result:', result)
     const trainingLoss = [...trainingResult.history.loss].pop()
-    console.log('::: Training loss:', trainingLoss)
+    const validationLoss = [...trainingResult.history.val_loss].pop()
+    console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
 
     // Testing model
     const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
     // console.log('::: Testing result:', testingResult)
     const testingLoss = testingResult[0]
-    console.log('::: Testing loss:', testingLoss)
+    console.log('::: Testing loss:', testingLoss.toFixed(5))
 
     // ...
     // denormalize(normalizedFeatures).print()
