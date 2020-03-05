@@ -79,6 +79,18 @@ console.log('::: tfjs backend:', tf.getBackend());
     // })
 
     // Linear regression example ...............................................
+    function createModel() {
+        const model = tf.sequential()
+        model.add(tf.layers.dense({
+            units: 1,
+            useBias: true,
+            activation: 'linear',
+            inputDim: 1,
+        }))
+
+        return model
+    }
+
     // function denormalize({ tensor, min, max }) {
     //     return tensor.mul(max.sub(min)).add(min)
     // }
@@ -129,32 +141,41 @@ console.log('::: tfjs backend:', tf.getBackend());
     if (points.length % 2) {
         points.pop()
     }
-
     tf.util.shuffle(points)
 
     // Visualize data
     plot(points, 'Square feet')
 
-    // Prepare features (inputs)
-    const featureValues = points.map((point) => point.x)
-    const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
+    tf.tidy(() => {
+        // Prepare features (inputs)
+        const featureValues = points.map((point) => point.x)
+        const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
 
-    // Prepare labels (output)
-    const labelValues = points.map((point) => point.y)
-    const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
+        // Prepare labels (output)
+        const labelValues = points.map((point) => point.y)
+        const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
 
-    // Normalize features (min-max)
-    const normalizedFeatures = normalize(featureTensor)
+        // Normalize features (min-max)
+        const normalizedFeatures = normalize(featureTensor)
 
-    // Normalize labels (min-max)
-    const normalizedLabels = normalize(labelTensor)
+        // Normalize labels (min-max)
+        const normalizedLabels = normalize(labelTensor)
 
-    // Slitting into training and testing features data
-    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
-    trainingFeatureTensor.print(true)
+        // Slitting into training and testing features data
+        const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
 
-    // Slitting into training and testing label data
-    const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+        // Slitting into training and testing label data
+        const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+
+        // Create model
+        const model = createModel()
+
+        // Inspect model
+        model.summary()
+        tfvis.show.modelSummary({ name: 'Model Summary' }, model)
+        const layer = model.getLayer(null, 0)
+        tfvis.show.layer({ name: 'Layer 1' }, layer)
+    })
 
     // ...
     // denormalize(normalizedFeatures).print()
