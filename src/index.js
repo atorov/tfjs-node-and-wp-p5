@@ -88,6 +88,11 @@ console.log('::: tfjs backend:', tf.getBackend());
             inputDim: 1,
         }))
 
+        model.compile({
+            loss: 'meanSquaredError',
+            optimizer: tf.train.sgd(0.1),
+        })
+
         return model
     }
 
@@ -175,6 +180,8 @@ console.log('::: tfjs backend:', tf.getBackend());
         tfvis.show.modelSummary({ name: 'Model Summary' }, model)
         const layer = model.getLayer(null, 0)
         tfvis.show.layer({ name: 'Layer 1' }, layer)
+
+        // ... TODO:
     })
 
     // ...
