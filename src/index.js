@@ -129,6 +129,17 @@ console.log('::: tfjs backend:', tf.getBackend());
         )
     }
 
+    async function trainModel(model, trainingFeatureTensor, trainingLabelTensor) {
+        return model.fit(trainingFeatureTensor, trainingLabelTensor, {
+            epochs: 20,
+            callbacks: {
+                onEpochEnd: (epoch, log) => {
+                    console.log(`::: Epoch ${epoch}: loss = ${log.loss}`)
+                },
+            },
+        })
+    }
+
     // Read data from CSV file
     const dataset = tf.data.csv('/data/kc_house_data.csv')
     // const sampleDataset = dataset.take(10)
@@ -151,38 +162,37 @@ console.log('::: tfjs backend:', tf.getBackend());
     // Visualize data
     plot(points, 'Square feet')
 
-    tf.tidy(() => {
-        // Prepare features (inputs)
-        const featureValues = points.map((point) => point.x)
-        const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
+    // Prepare features (inputs)
+    const featureValues = points.map((point) => point.x)
+    const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
 
-        // Prepare labels (output)
-        const labelValues = points.map((point) => point.y)
-        const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
+    // Prepare labels (output)
+    const labelValues = points.map((point) => point.y)
+    const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
 
-        // Normalize features (min-max)
-        const normalizedFeatures = normalize(featureTensor)
+    // Normalize features (min-max)
+    const normalizedFeatures = normalize(featureTensor)
 
-        // Normalize labels (min-max)
-        const normalizedLabels = normalize(labelTensor)
+    // Normalize labels (min-max)
+    const normalizedLabels = normalize(labelTensor)
 
-        // Slitting into training and testing features data
-        const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
+    // Slitting into training and testing features data
+    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
 
-        // Slitting into training and testing label data
-        const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+    // Slitting into training and testing label data
+    const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
 
-        // Create model
-        const model = createModel()
+    // Create model
+    const model = createModel()
 
-        // Inspect model
-        model.summary()
-        tfvis.show.modelSummary({ name: 'Model Summary' }, model)
-        const layer = model.getLayer(null, 0)
-        tfvis.show.layer({ name: 'Layer 1' }, layer)
+    // Inspect model
+    model.summary()
+    tfvis.show.modelSummary({ name: 'Model Summary' }, model)
+    const layer = model.getLayer(null, 0)
+    tfvis.show.layer({ name: 'Layer 1' }, layer)
 
-        // ... TODO:
-    })
+    // Train model
+    await trainModel(model, trainingFeatureTensor, trainingLabelTensor)
 
     // ...
     // denormalize(normalizedFeatures).print()
