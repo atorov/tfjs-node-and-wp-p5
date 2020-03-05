@@ -83,14 +83,15 @@ console.log('::: tfjs backend:', tf.getBackend());
         const model = tf.sequential()
         model.add(tf.layers.dense({
             units: 1,
-            useBias: true,
-            activation: 'linear',
+            useBias: true, // default: true
+            activation: 'linear', // default: 'linear'
             inputDim: 1,
         }))
 
         model.compile({
             loss: 'meanSquaredError',
-            optimizer: tf.train.sgd(0.1),
+            // optimizer: tf.train.sgd(0.1),
+            optimizer: 'adam',
         })
 
         return model
@@ -130,11 +131,22 @@ console.log('::: tfjs backend:', tf.getBackend());
     }
 
     async function trainModel(model, trainingFeatureTensor, trainingLabelTensor) {
+        const {
+            // onBatchEnd,
+            onEpochEnd,
+        } = tfvis.show.fitCallbacks(
+            { name: 'Training Performance' },
+            ['loss'],
+        )
+
         return model.fit(trainingFeatureTensor, trainingLabelTensor, {
+            batchSize: 32, // 1024, default: 32
             epochs: 20,
             callbacks: {
+                // onBatchEnd,
                 onEpochEnd: (epoch, log) => {
                     console.log(`::: Epoch ${epoch}: loss = ${log.loss}`)
+                    onEpochEnd(epoch, log)
                 },
             },
         })
