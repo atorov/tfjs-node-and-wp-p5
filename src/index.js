@@ -204,7 +204,16 @@ console.log('::: tfjs backend:', tf.getBackend());
     tfvis.show.layer({ name: 'Layer 1' }, layer)
 
     // Train model
-    await trainModel(model, trainingFeatureTensor, trainingLabelTensor)
+    const trainingResult = await trainModel(model, trainingFeatureTensor, trainingLabelTensor)
+    // console.log('::: Training result:', result)
+    const trainingLoss = [...trainingResult.history.loss].pop()
+    console.log('::: Training loss:', trainingLoss)
+
+    // Testing model
+    const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
+    // console.log('::: Testing result:', testingResult)
+    const testingLoss = testingResult[0]
+    console.log('::: Testing loss:', testingLoss)
 
     // ...
     // denormalize(normalizedFeatures).print()
