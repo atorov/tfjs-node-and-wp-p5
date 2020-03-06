@@ -212,9 +212,24 @@ console.log('::: tfjs backend:', tf.getBackend());
         return model
     }
 
-    // === === ===
-    // const model =
-    await train()
+    // Check if the model exists
+    const models = await tf.io.listModels()
+    const modelInfo = models['localstorage://linreg']
+    console.log('::: Model info:', modelInfo)
+    let model
+    if (!modelInfo) {
+        // Train model
+        model = await train()
+
+        // Save model
+        const saveResults = await model.save('localstorage://linreg')
+        console.log('::: Save results:', saveResults)
+    }
+    else {
+        // Load model
+        model = await tf.loadLayersModel('localstorage://linreg')
+        model.summary()
+    }
 
 
     // ...
