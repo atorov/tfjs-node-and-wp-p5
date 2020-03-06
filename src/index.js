@@ -114,21 +114,6 @@ console.log('::: tfjs backend:', tf.getBackend());
     }
     tf.util.shuffle(points)
 
-    // Visualize data
-    tfvis.render.scatterplot(
-        {
-            name: 'Square feet vs House Price',
-        },
-        {
-            values: [points],
-            series: ['original'],
-        },
-        {
-            xLabel: 'Square feet',
-            yLabel: 'Price',
-        },
-    )
-
     // Prepare features (inputs)
     const featureValues = points.map((point) => point.x)
     const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
@@ -231,7 +216,33 @@ console.log('::: tfjs backend:', tf.getBackend());
         console.log('::: Predicted output value: $', (outputValue / 1e6).toFixed(3), 'M')
     })
 
-    // ...
+    // Visualize data
+    tf.tidy(() => {
+        const normalizedXs = tf.linspace(0, 1, 100)
+        const xs = denormalize(normalizedXs, normalizedFeatures.min, normalizedFeatures.max).dataSync()
+
+        const normalizedYs = model.predict(normalizedXs.reshape([100, 1]))
+        const ys = denormalize(normalizedYs, normalizedLabels.min, normalizedLabels.max).dataSync()
+
+        const predictions = Array.from(xs).map((x, index) => ({
+            x,
+            y: ys[index],
+        }))
+
+        tfvis.render.scatterplot(
+            {
+                name: 'Square feet vs House Price',
+            },
+            {
+                values: [points, predictions],
+                series: ['original', 'predicted'],
+            },
+            {
+                xLabel: 'Square feet',
+                yLabel: 'Price',
+            },
+        )
+    })
 
     // .........................................................................
     console.log('::: tensors:', tf.memory().numTensors)
