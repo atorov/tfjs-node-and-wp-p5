@@ -79,15 +79,8 @@ console.log('::: tfjs backend:', tf.getBackend());
     // })
 
     // Linear regression example ...............................................
-    // function denormalize({ tensor, min, max }) {
-    //     return tensor.mul(max.sub(min)).add(min)
-    // }
-
-    function normalize(tensor) {
+    function normalize(tensor, min = tensor.min(), max = tensor.max()) {
         return tf.tidy(() => {
-            const min = tensor.min()
-            const max = tensor.max()
-
             const normalizedTensor = tensor.sub(min).div(max.sub(min))
 
             return {
@@ -98,65 +91,74 @@ console.log('::: tfjs backend:', tf.getBackend());
         })
     }
 
-    async function train() {
-        // Read data from CSV file
-        const dataset = tf.data.csv('/data/kc_house_data.csv')
-        // const sampleDataset = dataset.take(10)
-        // const sampleArray = await sampleDataset.toArray()
-        // console.log('::: dataset:', sampleArray)
+    function denormalize(tensor, min, max) {
+        return tensor.mul(max.sub(min)).add(min)
+    }
 
-        // Extract data
-        const pointsDataset = dataset.map((record) => ({
-            x: record.sqft_living,
-            y: record.price,
-        }))
+    // Read data from CSV file
+    const dataset = tf.data.csv('/data/kc_house_data.csv')
+    // const sampleDataset = dataset.take(10)
+    // const sampleArray = await sampleDataset.toArray()
+    // console.log('::: dataset:', sampleArray)
 
-        // Shuffle data
-        const points = await pointsDataset.toArray()
-        if (points.length % 2) {
-            points.pop()
-        }
-        tf.util.shuffle(points)
+    // Extract data
+    const pointsDataset = dataset.map((record) => ({
+        x: record.sqft_living,
+        y: record.price,
+    }))
 
-        // Visualize data
-        tfvis.render.scatterplot(
-            {
-                name: 'Square feet vs House Price',
-            },
-            {
-                values: [points],
-                series: ['original'],
-            },
-            {
-                xLabel: 'Square feet',
-                yLabel: 'Price',
-            },
-        )
+    // Shuffle data
+    const points = await pointsDataset.toArray()
+    if (points.length % 2) {
+        points.pop()
+    }
+    tf.util.shuffle(points)
 
-        // Prepare features (inputs)
-        const featureValues = points.map((point) => point.x)
-        const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
+    // Visualize data
+    tfvis.render.scatterplot(
+        {
+            name: 'Square feet vs House Price',
+        },
+        {
+            values: [points],
+            series: ['original'],
+        },
+        {
+            xLabel: 'Square feet',
+            yLabel: 'Price',
+        },
+    )
 
-        // Prepare labels (output)
-        const labelValues = points.map((point) => point.y)
-        const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
+    // Prepare features (inputs)
+    const featureValues = points.map((point) => point.x)
+    const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
 
-        // Normalize features (min-max)
-        const normalizedFeatures = normalize(featureTensor)
-        featureTensor.dispose()
+    // Prepare labels (output)
+    const labelValues = points.map((point) => point.y)
+    const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
 
-        // Normalize labels (min-max)
-        const normalizedLabels = normalize(labelTensor)
-        labelTensor.dispose()
+    // Normalize features (min-max)
+    const normalizedFeatures = normalize(featureTensor)
+    featureTensor.dispose()
 
-        // Slitting into training and testing features data
-        const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
+    // Normalize labels (min-max)
+    const normalizedLabels = normalize(labelTensor)
+    labelTensor.dispose()
 
-        // Slitting into training and testing label data
-        const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+    // Slitting into training and testing features data
+    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
 
+    // Slitting into training and testing label data
+    const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+
+    // Check if the model exists
+    const models = await tf.io.listModels()
+    const modelInfo = models['localstorage://linreg']
+    console.log('::: Model info:', modelInfo)
+    let model
+    if (!modelInfo) {
         // Create model
-        const model = tf.sequential()
+        model = tf.sequential()
         model.add(tf.layers.dense({
             units: 1,
             useBias: true, // default: true
@@ -169,12 +171,6 @@ console.log('::: tfjs backend:', tf.getBackend());
             // optimizer: tf.train.sgd(0.1),
             optimizer: 'adam',
         })
-
-        // Inspect model
-        model.summary()
-        tfvis.show.modelSummary({ name: 'Model Summary' }, model)
-        const layer = model.getLayer(null, 0)
-        tfvis.show.layer({ name: 'Layer 1' }, layer)
 
         // Train model
         const {
@@ -209,18 +205,6 @@ console.log('::: tfjs backend:', tf.getBackend());
         const testingLoss = testingResult[0]
         console.log('::: Testing loss:', testingLoss.toFixed(5))
 
-        return model
-    }
-
-    // Check if the model exists
-    const models = await tf.io.listModels()
-    const modelInfo = models['localstorage://linreg']
-    console.log('::: Model info:', modelInfo)
-    let model
-    if (!modelInfo) {
-        // Train model
-        model = await train()
-
         // Save model
         const saveResults = await model.save('localstorage://linreg')
         console.log('::: Save results:', saveResults)
@@ -228,12 +212,26 @@ console.log('::: tfjs backend:', tf.getBackend());
     else {
         // Load model
         model = await tf.loadLayersModel('localstorage://linreg')
-        model.summary()
     }
 
+    // Inspect model
+    model.summary()
+    tfvis.show.modelSummary({ name: 'Model Summary' }, model)
+    const layer = model.getLayer(null, 0)
+    tfvis.show.layer({ name: 'Layer 1' }, layer)
+
+    // Make prediction
+    tf.tidy(() => {
+        const inputValue = 4000
+        const inputTensor = tf.tensor1d([inputValue])
+        const normalizedInput = normalize(inputTensor, normalizedFeatures.min, normalizedFeatures.max)
+        const normalizedOutput = model.predict(normalizedInput.tensor)
+        const outputTensor = denormalize(normalizedOutput, normalizedLabels.min, normalizedLabels.max)
+        const outputValue = outputTensor.dataSync()[0]
+        console.log('::: Predicted output value: $', (outputValue / 1e6).toFixed(3), 'M')
+    })
 
     // ...
-    // denormalize(normalizedFeatures).print()
 
     // .........................................................................
     console.log('::: tensors:', tf.memory().numTensors)
