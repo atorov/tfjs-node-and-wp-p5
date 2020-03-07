@@ -245,21 +245,184 @@ console.log('::: tfjs backend:', tf.getBackend());
     // })
 
     // Non-linear regression example ...............................................
-    function normalize(tensor, min = tensor.min(), max = tensor.max()) {
-        return tf.tidy(() => {
-            const normalizedTensor = tensor.sub(min).div(max.sub(min))
+    // function normalize(tensor, min = tensor.min(), max = tensor.max()) {
+    //     return tf.tidy(() => {
+    //         const normalizedTensor = tensor.sub(min).div(max.sub(min))
 
-            return {
-                tensor: normalizedTensor,
-                min,
-                max,
-            }
-        })
-    }
+    //         return {
+    //             tensor: normalizedTensor,
+    //             min,
+    //             max,
+    //         }
+    //     })
+    // }
 
-    function denormalize(tensor, min, max) {
-        return tensor.mul(max.sub(min)).add(min)
-    }
+    // function denormalize(tensor, min, max) {
+    //     return tensor.mul(max.sub(min)).add(min)
+    // }
+
+    // // Read data from CSV file
+    // const dataset = tf.data.csv('/data/kc_house_data.csv')
+
+    // // Extract data
+    // const pointsDataset = dataset.map((record) => ({
+    //     x: record.sqft_living,
+    //     y: record.price,
+    // }))
+
+    // // Shuffle data
+    // const points = await pointsDataset.toArray()
+    // if (points.length % 2) {
+    //     points.pop()
+    // }
+    // tf.util.shuffle(points)
+
+    // // Prepare features (inputs)
+    // const featureValues = points.map((point) => point.x)
+    // const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
+
+    // // Prepare labels (output)
+    // const labelValues = points.map((point) => point.y)
+    // const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
+
+    // // Normalize features (min-max)
+    // const normalizedFeatures = normalize(featureTensor)
+    // featureTensor.dispose()
+
+    // // Normalize labels (min-max)
+    // const normalizedLabels = normalize(labelTensor)
+    // labelTensor.dispose()
+
+    // // Slitting into training and testing features data
+    // const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
+
+    // // Slitting into training and testing label data
+    // const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+
+    // // Check if the model exists
+    // const models = await tf.io.listModels()
+    // const modelInfo = models['localstorage://nlinreg']
+    // console.log('::: Model info:', modelInfo)
+    // let model
+    // if (!modelInfo) {
+    //     // Create model
+    //     model = tf.sequential()
+    //     model.add(tf.layers.dense({
+    //         units: 3,
+    //         activation: 'sigmoid',
+    //         inputDim: 1,
+    //     }))
+    //     model.add(tf.layers.dense({
+    //         units: 1,
+    //         activation: 'sigmoid',
+    //     }))
+
+    //     model.compile({
+    //         loss: 'meanSquaredError',
+    //         optimizer: 'adam',
+    //     })
+
+    //     // Train model
+    //     const {
+    //         // onBatchEnd,
+    //         onEpochEnd,
+    //     } = tfvis.show.fitCallbacks(
+    //         { name: 'Training Performance' },
+    //         ['loss', 'val_loss'],
+    //     )
+
+    //     const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
+    //         batchSize: 32, // 1024, default: 32
+    //         epochs: 100,
+    //         validationSplit: 0.2,
+    //         callbacks: {
+    //             // onBatchEnd,
+    //             onEpochEnd: (epoch, log) => {
+    //                 console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
+    //                 onEpochEnd(epoch, log)
+    //             },
+    //         },
+    //     })
+    //     const trainingLoss = [...trainingResult.history.loss].pop()
+    //     const validationLoss = [...trainingResult.history.val_loss].pop()
+    //     console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
+
+    //     // Testing model
+    //     const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
+    //     // console.log('::: Testing result:', testingResult)
+    //     const testingLoss = testingResult[0]
+    //     console.log('::: Testing loss:', testingLoss.toFixed(5))
+
+    //     // Save model
+    //     const saveResults = await model.save('localstorage://nlinreg')
+    //     console.log('::: Save results:', saveResults)
+    // }
+    // else {
+    //     // Load model
+    //     model = await tf.loadLayersModel('localstorage://nlinreg')
+    // }
+
+    // // Inspect model
+    // model.summary()
+    // tfvis.show.modelSummary({ name: 'Model Summary' }, model)
+    // const layer = model.getLayer(null, 0)
+    // tfvis.show.layer({ name: 'Layer 1' }, layer)
+
+    // // Make prediction
+    // tf.tidy(() => {
+    //     const inputValue = 4000
+    //     const inputTensor = tf.tensor1d([inputValue])
+    //     const normalizedInput = normalize(inputTensor, normalizedFeatures.min, normalizedFeatures.max)
+    //     const normalizedOutput = model.predict(normalizedInput.tensor)
+    //     const outputTensor = denormalize(normalizedOutput, normalizedLabels.min, normalizedLabels.max)
+    //     const outputValue = outputTensor.dataSync()[0]
+    //     console.log('::: Predicted output value: $', (outputValue / 1e6).toFixed(3), 'M')
+    // })
+
+    // // Visualize data
+    // tf.tidy(() => {
+    //     const normalizedXs = tf.linspace(0, 1, 100)
+    //     const xs = denormalize(normalizedXs, normalizedFeatures.min, normalizedFeatures.max).dataSync()
+
+    //     const normalizedYs = model.predict(normalizedXs.reshape([100, 1]))
+    //     const ys = denormalize(normalizedYs, normalizedLabels.min, normalizedLabels.max).dataSync()
+
+    //     const predictions = Array.from(xs).map((x, index) => ({
+    //         x,
+    //         y: ys[index],
+    //     }))
+
+    //     tfvis.render.scatterplot(
+    //         {
+    //             name: 'Square feet vs House Price',
+    //         },
+    //         {
+    //             values: [points, predictions],
+    //             series: ['original', 'predicted'],
+    //         },
+    //         {
+    //             xLabel: 'Square feet',
+    //             yLabel: 'Price',
+    //         },
+    //     )
+    // })
+
+    // Binary classification ...................................................
+    // function normalize(tensor, min = tensor.min(), max = tensor.max()) {
+    //     return tf.tidy(() => {
+    //         const normalizedTensor = tensor.sub(min).div(max.sub(min))
+
+    //         return {
+    //             tensor: normalizedTensor,
+    //             min,
+    //             max,
+    //         }
+    //     })
+    // }
+
+    // function denormalize(tensor, min, max) {
+    //     return tensor.mul(max.sub(min)).add(min)
+    // }
 
     // Read data from CSV file
     const dataset = tf.data.csv('/data/kc_house_data.csv')
@@ -268,6 +431,7 @@ console.log('::: tfjs backend:', tf.getBackend());
     const pointsDataset = dataset.map((record) => ({
         x: record.sqft_living,
         y: record.price,
+        class: record.waterfront,
     }))
 
     // Shuffle data
@@ -277,132 +441,149 @@ console.log('::: tfjs backend:', tf.getBackend());
     }
     tf.util.shuffle(points)
 
-    // Prepare features (inputs)
-    const featureValues = points.map((point) => point.x)
-    const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
+    // // Prepare features (inputs)
+    // const featureValues = points.map((point) => point.x)
+    // const featureTensor = tf.tensor2d(featureValues, [featureValues.length, 1])
 
-    // Prepare labels (output)
-    const labelValues = points.map((point) => point.y)
-    const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
+    // // Prepare labels (output)
+    // const labelValues = points.map((point) => point.y)
+    // const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
 
-    // Normalize features (min-max)
-    const normalizedFeatures = normalize(featureTensor)
-    featureTensor.dispose()
+    // // Normalize features (min-max)
+    // const normalizedFeatures = normalize(featureTensor)
+    // featureTensor.dispose()
 
-    // Normalize labels (min-max)
-    const normalizedLabels = normalize(labelTensor)
-    labelTensor.dispose()
+    // // Normalize labels (min-max)
+    // const normalizedLabels = normalize(labelTensor)
+    // labelTensor.dispose()
 
-    // Slitting into training and testing features data
-    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
+    // // Slitting into training and testing features data
+    // const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
 
-    // Slitting into training and testing label data
-    const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+    // // Slitting into training and testing label data
+    // const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
 
-    // Check if the model exists
-    const models = await tf.io.listModels()
-    const modelInfo = models['localstorage://nlinreg']
-    console.log('::: Model info:', modelInfo)
-    let model
-    if (!modelInfo) {
-        // Create model
-        model = tf.sequential()
-        model.add(tf.layers.dense({
-            units: 3,
-            activation: 'sigmoid',
-            inputDim: 1,
-        }))
-        model.add(tf.layers.dense({
-            units: 1,
-            activation: 'sigmoid',
-        }))
+    // // Check if the model exists
+    // const models = await tf.io.listModels()
+    // const modelInfo = models['localstorage://nlinreg']
+    // console.log('::: Model info:', modelInfo)
+    // let model
+    // if (!modelInfo) {
+    //     // Create model
+    //     model = tf.sequential()
+    //     model.add(tf.layers.dense({
+    //         units: 3,
+    //         activation: 'sigmoid',
+    //         inputDim: 1,
+    //     }))
+    //     model.add(tf.layers.dense({
+    //         units: 1,
+    //         activation: 'sigmoid',
+    //     }))
 
-        model.compile({
-            loss: 'meanSquaredError',
-            optimizer: 'adam',
-        })
+    //     model.compile({
+    //         loss: 'meanSquaredError',
+    //         optimizer: 'adam',
+    //     })
 
-        // Train model
-        const {
-            // onBatchEnd,
-            onEpochEnd,
-        } = tfvis.show.fitCallbacks(
-            { name: 'Training Performance' },
-            ['loss', 'val_loss'],
-        )
+    //     // Train model
+    //     const {
+    //         // onBatchEnd,
+    //         onEpochEnd,
+    //     } = tfvis.show.fitCallbacks(
+    //         { name: 'Training Performance' },
+    //         ['loss', 'val_loss'],
+    //     )
 
-        const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
-            batchSize: 32, // 1024, default: 32
-            epochs: 100,
-            validationSplit: 0.2,
-            callbacks: {
-                // onBatchEnd,
-                onEpochEnd: (epoch, log) => {
-                    console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
-                    onEpochEnd(epoch, log)
-                },
-            },
-        })
-        const trainingLoss = [...trainingResult.history.loss].pop()
-        const validationLoss = [...trainingResult.history.val_loss].pop()
-        console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
+    //     const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
+    //         batchSize: 32, // 1024, default: 32
+    //         epochs: 100,
+    //         validationSplit: 0.2,
+    //         callbacks: {
+    //             // onBatchEnd,
+    //             onEpochEnd: (epoch, log) => {
+    //                 console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
+    //                 onEpochEnd(epoch, log)
+    //             },
+    //         },
+    //     })
+    //     const trainingLoss = [...trainingResult.history.loss].pop()
+    //     const validationLoss = [...trainingResult.history.val_loss].pop()
+    //     console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
 
-        // Testing model
-        const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
-        // console.log('::: Testing result:', testingResult)
-        const testingLoss = testingResult[0]
-        console.log('::: Testing loss:', testingLoss.toFixed(5))
+    //     // Testing model
+    //     const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
+    //     // console.log('::: Testing result:', testingResult)
+    //     const testingLoss = testingResult[0]
+    //     console.log('::: Testing loss:', testingLoss.toFixed(5))
 
-        // Save model
-        const saveResults = await model.save('localstorage://nlinreg')
-        console.log('::: Save results:', saveResults)
-    }
-    else {
-        // Load model
-        model = await tf.loadLayersModel('localstorage://nlinreg')
-    }
+    //     // Save model
+    //     const saveResults = await model.save('localstorage://nlinreg')
+    //     console.log('::: Save results:', saveResults)
+    // }
+    // else {
+    //     // Load model
+    //     model = await tf.loadLayersModel('localstorage://nlinreg')
+    // }
 
-    // Inspect model
-    model.summary()
-    tfvis.show.modelSummary({ name: 'Model Summary' }, model)
-    const layer = model.getLayer(null, 0)
-    tfvis.show.layer({ name: 'Layer 1' }, layer)
+    // // Inspect model
+    // model.summary()
+    // tfvis.show.modelSummary({ name: 'Model Summary' }, model)
+    // const layer = model.getLayer(null, 0)
+    // tfvis.show.layer({ name: 'Layer 1' }, layer)
 
-    // Make prediction
-    tf.tidy(() => {
-        const inputValue = 4000
-        const inputTensor = tf.tensor1d([inputValue])
-        const normalizedInput = normalize(inputTensor, normalizedFeatures.min, normalizedFeatures.max)
-        const normalizedOutput = model.predict(normalizedInput.tensor)
-        const outputTensor = denormalize(normalizedOutput, normalizedLabels.min, normalizedLabels.max)
-        const outputValue = outputTensor.dataSync()[0]
-        console.log('::: Predicted output value: $', (outputValue / 1e6).toFixed(3), 'M')
-    })
+    // // Make prediction
+    // tf.tidy(() => {
+    //     const inputValue = 4000
+    //     const inputTensor = tf.tensor1d([inputValue])
+    //     const normalizedInput = normalize(inputTensor, normalizedFeatures.min, normalizedFeatures.max)
+    //     const normalizedOutput = model.predict(normalizedInput.tensor)
+    //     const outputTensor = denormalize(normalizedOutput, normalizedLabels.min, normalizedLabels.max)
+    //     const outputValue = outputTensor.dataSync()[0]
+    //     console.log('::: Predicted output value: $', (outputValue / 1e6).toFixed(3), 'M')
+    // })
 
     // Visualize data
     tf.tidy(() => {
-        const normalizedXs = tf.linspace(0, 1, 100)
-        const xs = denormalize(normalizedXs, normalizedFeatures.min, normalizedFeatures.max).dataSync()
+        tfvis.visor().toggleFullScreen()
 
-        const normalizedYs = model.predict(normalizedXs.reshape([100, 1]))
-        const ys = denormalize(normalizedYs, normalizedLabels.min, normalizedLabels.max).dataSync()
+        //     const normalizedXs = tf.linspace(0, 1, 100)
+        //     const xs = denormalize(normalizedXs, normalizedFeatures.min, normalizedFeatures.max).dataSync()
 
-        const predictions = Array.from(xs).map((x, index) => ({
-            x,
-            y: ys[index],
-        }))
+        //     const normalizedYs = model.predict(normalizedXs.reshape([100, 1]))
+        //     const ys = denormalize(normalizedYs, normalizedLabels.min, normalizedLabels.max).dataSync()
+
+        //     const predictions = Array.from(xs).map((x, index) => ({
+        //         x,
+        //         y: ys[index],
+        //     }))
+
+        const allSeries = points.reduce((acc, point) => {
+            const name = `Waterfront: ${point.class}`
+
+            return {
+                ...acc,
+                [name]: [...(acc[name] || []), point],
+            }
+        }, {})
 
         tfvis.render.scatterplot(
             {
                 name: 'Square feet vs House Price',
+                styles: {
+                    width: '100%',
+                    height: '100%',
+                },
             },
             {
-                values: [points, predictions],
-                series: ['original', 'predicted'],
+                values: Object.values(allSeries),
+                series: Object.keys(allSeries),
             },
             {
                 xLabel: 'Square feet',
                 yLabel: 'Price',
+                width: 800,
+                height: 600,
             },
         )
     })
