@@ -81,84 +81,78 @@ async function binaryClassification() {
     const normalizedFeatures = normalizeMany(featureTensor)
     featureTensor.dispose()
 
-    // // Normalize labels (min-max)
-    // const normalizedLabels = normalize(labelTensor)
-    // labelTensor.dispose()
+    // Slitting into training and testing features data
+    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
 
-    // // Slitting into training and testing features data
-    // const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
+    // Slitting into training and testing label data
+    const [trainingLabelTensor, testingLabelTensor] = tf.split(labelTensor, 2)
 
-    // // Slitting into training and testing label data
-    // const [trainingLabelTensor, testingLabelTensor] = tf.split(normalizedLabels.tensor, 2)
+    // Check if the model exists
+    const models = await tf.io.listModels()
+    const modelInfo = models['localstorage://bclass']
+    console.log('::: Model info:', modelInfo)
+    let model
+    if (!modelInfo) {
+        // Create model
+        model = tf.sequential()
+        model.add(tf.layers.dense({
+            units: 3,
+            activation: 'sigmoid',
+            inputDim: 2,
+        }))
+        model.add(tf.layers.dense({
+            units: 1,
+            activation: 'sigmoid',
+        }))
 
-    // // Check if the model exists
-    // const models = await tf.io.listModels()
-    // const modelInfo = models['localstorage://nlinreg']
-    // console.log('::: Model info:', modelInfo)
-    // let model
-    // if (!modelInfo) {
-    //     // Create model
-    //     model = tf.sequential()
-    //     model.add(tf.layers.dense({
-    //         units: 3,
-    //         activation: 'sigmoid',
-    //         inputDim: 1,
-    //     }))
-    //     model.add(tf.layers.dense({
-    //         units: 1,
-    //         activation: 'sigmoid',
-    //     }))
+        model.compile({
+            loss: 'binaryCrossentropy',
+            optimizer: 'adam',
+        })
 
-    //     model.compile({
-    //         loss: 'meanSquaredError',
-    //         optimizer: 'adam',
-    //     })
+        // Train model
+        const {
+            // onBatchEnd,
+            onEpochEnd,
+        } = tfvis.show.fitCallbacks(
+            { name: 'Training Performance' },
+            ['loss', 'val_loss'],
+        )
 
-    //     // Train model
-    //     const {
-    //         // onBatchEnd,
-    //         onEpochEnd,
-    //     } = tfvis.show.fitCallbacks(
-    //         { name: 'Training Performance' },
-    //         ['loss', 'val_loss'],
-    //     )
+        const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
+            batchSize: 32, // 1024, default: 32
+            epochs: 30,
+            validationSplit: 0.2,
+            callbacks: {
+                // onBatchEnd,
+                onEpochEnd: (epoch, log) => {
+                    console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
+                    onEpochEnd(epoch, log)
+                },
+            },
+        })
+        const trainingLoss = [...trainingResult.history.loss].pop()
+        const validationLoss = [...trainingResult.history.val_loss].pop()
+        console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
 
-    //     const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
-    //         batchSize: 32, // 1024, default: 32
-    //         epochs: 100,
-    //         validationSplit: 0.2,
-    //         callbacks: {
-    //             // onBatchEnd,
-    //             onEpochEnd: (epoch, log) => {
-    //                 console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
-    //                 onEpochEnd(epoch, log)
-    //             },
-    //         },
-    //     })
-    //     const trainingLoss = [...trainingResult.history.loss].pop()
-    //     const validationLoss = [...trainingResult.history.val_loss].pop()
-    //     console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
+        // Testing model
+        const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
+        // console.log('::: Testing result:', testingResult)
+        const testingLoss = testingResult[0]
+        console.log('::: Testing loss:', testingLoss.toFixed(5))
 
-    //     // Testing model
-    //     const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
-    //     // console.log('::: Testing result:', testingResult)
-    //     const testingLoss = testingResult[0]
-    //     console.log('::: Testing loss:', testingLoss.toFixed(5))
+        // Save model
+        const saveResults = await model.save('localstorage://bclass')
+        console.log('::: Save results:', saveResults)
+    }
+    else {
+        // Load model
+        model = await tf.loadLayersModel('localstorage://bclass')
+    }
 
-    //     // Save model
-    //     const saveResults = await model.save('localstorage://nlinreg')
-    //     console.log('::: Save results:', saveResults)
-    // }
-    // else {
-    //     // Load model
-    //     model = await tf.loadLayersModel('localstorage://nlinreg')
-    // }
-
-    // // Inspect model
-    // model.summary()
-    // tfvis.show.modelSummary({ name: 'Model Summary' }, model)
-    // const layer = model.getLayer(null, 0)
-    // tfvis.show.layer({ name: 'Layer 1' }, layer)
+    // Inspect model
+    model.summary()
+    tfvis.show.modelSummary({ name: 'Model Summary' }, model)
 
     // // Make prediction
     //     const inputValue = 4000
