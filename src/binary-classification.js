@@ -51,7 +51,78 @@ function denormalizeMany(tensor, min, max) {
     return tf.concat(denormalized, 1)
 }
 
+async function plotPredictionHeatmap(
+    model,
+    normalizedFeatures,
+    name = 'Predicted class',
+    size = 400,
+) {
+    const valuesEtc = tf.tidy(() => {
+        const gridSize = 50
+        const predictionColumns = []
+        for (let colIndex = 0; colIndex < gridSize; colIndex++) {
+            const colInputs = []
+            const x = colIndex / gridSize
+
+            for (let rowIndex = 0; rowIndex < gridSize; rowIndex++) {
+                const y = (gridSize - rowIndex) / gridSize
+                colInputs.push([x, y])
+            }
+
+            const colPredictions = model.predict(tf.tensor2d(colInputs))
+            predictionColumns.push(colPredictions)
+        }
+
+        const valuesTensor = tf.stack(predictionColumns)
+
+        const normalizedTicksTensor = tf.linspace(0, 1, gridSize)
+        const xTicksTensor = denormalizeOne(normalizedTicksTensor, normalizedFeatures.min[0], normalizedFeatures.max[0])
+        const yTicksTensor = denormalizeOne(normalizedTicksTensor.reverse(), normalizedFeatures.min[1], normalizedFeatures.max[1])
+
+        return [valuesTensor, xTicksTensor, yTicksTensor]
+    })
+
+    const values = await valuesEtc[0].array()
+
+    const xTicks = await valuesEtc[1].array()
+    const xTickLabels = xTicks.map((v) => (v / 1000).toFixed(1) + 'k sqft')
+
+    const yTicks = await valuesEtc[2].array()
+    const yTickLabels = yTicks.map((v) => '$' + (v / 1000).toFixed(0) + 'k')
+
+    const data = {
+        values,
+        xTickLabels,
+        yTickLabels,
+    }
+
+    tfvis.render.heatmap(
+        {
+            name: `${name} (full domain)`,
+            tab: 'Predictions',
+        },
+        data,
+        {
+            domain: [0, 1],
+            height: size,
+        },
+    )
+
+    tfvis.render.heatmap(
+        {
+            name: `${name} (local)`,
+            tab: 'Predictions',
+        },
+        data,
+        {
+            height: size,
+        },
+    )
+}
+
 async function binaryClassification() {
+    tfvis.visor().toggleFullScreen()
+
     // Read data from CSV file
     const dataset = tf.data.csv('/data/kc_house_data.csv')
 
@@ -95,15 +166,30 @@ async function binaryClassification() {
     if (!modelInfo) {
         // Create model
         model = tf.sequential()
+
         model.add(tf.layers.dense({
-            units: 3,
+            units: 10,
+            useBias: true,
             activation: 'sigmoid',
             inputDim: 2,
         }))
         model.add(tf.layers.dense({
+            units: 10,
+            activation: 'relu',
+            useBias: true,
+        }))
+        model.add(tf.layers.dense({
             units: 1,
             activation: 'sigmoid',
+            useBias: true,
         }))
+
+        const optimizer = tf.train.adam()
+        model.compile({
+            loss: 'binaryCrossentropy',
+            optimizer,
+            metrics: ['accuracy'],
+        })
 
         model.compile({
             loss: 'binaryCrossentropy',
@@ -121,10 +207,13 @@ async function binaryClassification() {
 
         const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
             batchSize: 32, // 1024, default: 32
-            epochs: 30,
+            epochs: 500,
             validationSplit: 0.2,
             callbacks: {
                 // onBatchEnd,
+                onEpochBegin: () => {
+                    plotPredictionHeatmap(model, normalizedFeatures)
+                },
                 onEpochEnd: (epoch, log) => {
                     console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
                     onEpochEnd(epoch, log)
@@ -164,18 +253,7 @@ async function binaryClassification() {
     //     console.log('::: Predicted output value: $', (outputValue / 1e6).toFixed(3), 'M')
 
     // Visualize data
-    tfvis.visor().toggleFullScreen()
-
-    //     const normalizedXs = tf.linspace(0, 1, 100)
-    //     const xs = denormalize(normalizedXs, normalizedFeatures.min, normalizedFeatures.max).dataSync()
-
-    //     const normalizedYs = model.predict(normalizedXs.reshape([100, 1]))
-    //     const ys = denormalize(normalizedYs, normalizedLabels.min, normalizedLabels.max).dataSync()
-
-    //     const predictions = Array.from(xs).map((x, index) => ({
-    //         x,
-    //         y: ys[index],
-    //     }))
+    await plotPredictionHeatmap(model, normalizedFeatures)
 
     const allSeries = points.reduce((acc, point) => {
         const name = `Waterfront: ${point.class}`

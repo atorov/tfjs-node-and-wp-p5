@@ -148,7 +148,7 @@ console.log('::: tfjs backend:', tf.getBackend());
     //     model = tf.sequential()
     //     model.add(tf.layers.dense({
     //         units: 1,
-    //         useBias: true, // default: true
+    //         useBias: true,
     //         activation: 'linear', // default: 'linear'
     //         inputDim: 1,
     //     }))
@@ -311,11 +311,13 @@ console.log('::: tfjs backend:', tf.getBackend());
     //     model = tf.sequential()
     //     model.add(tf.layers.dense({
     //         units: 3,
+    //         useBias: true,
     //         activation: 'sigmoid',
     //         inputDim: 1,
     //     }))
     //     model.add(tf.layers.dense({
     //         units: 1,
+    //         useBias: true,
     //         activation: 'sigmoid',
     //     }))
 
