@@ -34,22 +34,22 @@ function normalizeMany(tensor, min, max) {
     }
 }
 
-// function denormalizeOne(tensor, min, max) {
-//     return tensor.mul(max.sub(min)).add(min)
+function denormalizeOne(tensor, min, max) {
+    return tensor.mul(max.sub(min)).add(min)
+}
+
+// function denormalizeMany(tensor, min, max) {
+//     const dimensions = tensor.shape.length && tensor.shape[1]
+
+//     if (!dimensions || dimensions === 1) {
+//         return denormalizeOne(tensor, min, max)
+//     }
+
+//     const arrayOfTensors = tf.split(tensor, dimensions, 1)
+//     const denormalized = arrayOfTensors.map((t, i) => denormalizeOne(t, min[i], max[i]))
+
+//     return tf.concat(denormalized, 1)
 // }
-
-// // function denormalizeMany(tensor, min, max) {
-// //     const dimensions = tensor.shape.length && tensor.shape[1]
-
-// //     if (!dimensions || dimensions === 1) {
-// //         return denormalizeOne(tensor, min, max)
-// //     }
-
-// //     const arrayOfTensors = tf.split(tensor, dimensions, 1)
-// //     const denormalized = arrayOfTensors.map((t, i) => denormalizeOne(t, min[i], max[i]))
-
-// //     return tf.concat(denormalized, 1)
-// // }
 
 function getClassIndex(className) {
     if (className === '1') return 0
@@ -66,74 +66,77 @@ function getClassName(classIndex) {
     return '3+'
 }
 
-// async function plotPredictionHeatmap(
-//     model,
-//     normalizedFeatures,
-//     name = 'Predicted class',
-//     size = 400,
-// ) {
-//     const valuesEtc = tf.tidy(() => {
-//         const gridSize = 50
-//         const predictionColumns = []
-//         for (let colIndex = 0; colIndex < gridSize; colIndex++) {
-//             const colInputs = []
-//             const x = colIndex / gridSize
+async function plotPredictionHeatmap(
+    model,
+    normalizedFeatures,
+    size = 400,
+) {
+    const valuesEtc = tf.tidy(() => {
+        const gridSize = 50
+        const predictionColumns = []
+        for (let colIndex = 0; colIndex < gridSize; colIndex++) {
+            const colInputs = []
+            const x = colIndex / gridSize
 
-//             for (let rowIndex = 0; rowIndex < gridSize; rowIndex++) {
-//                 const y = (gridSize - rowIndex) / gridSize
-//                 colInputs.push([x, y])
-//             }
+            for (let rowIndex = 0; rowIndex < gridSize; rowIndex++) {
+                const y = (gridSize - rowIndex) / gridSize
+                colInputs.push([x, y])
+            }
 
-//             const colPredictions = model.predict(tf.tensor2d(colInputs))
-//             predictionColumns.push(colPredictions)
-//         }
+            const colPredictions = model.predict(tf.tensor2d(colInputs))
+            predictionColumns.push(colPredictions)
+        }
 
-//         const valuesTensor = tf.stack(predictionColumns)
+        const valuesTensor = tf.stack(predictionColumns)
 
-//         const normalizedTicksTensor = tf.linspace(0, 1, gridSize)
-//         const xTicksTensor = denormalizeOne(normalizedTicksTensor, normalizedFeatures.min[0], normalizedFeatures.max[0])
-//         const yTicksTensor = denormalizeOne(normalizedTicksTensor.reverse(), normalizedFeatures.min[1], normalizedFeatures.max[1])
+        const normalizedTicksTensor = tf.linspace(0, 1, gridSize)
+        const xTicksTensor = denormalizeOne(normalizedTicksTensor, normalizedFeatures.min[0], normalizedFeatures.max[0])
+        const yTicksTensor = denormalizeOne(normalizedTicksTensor.reverse(), normalizedFeatures.min[1], normalizedFeatures.max[1])
 
-//         return [valuesTensor, xTicksTensor, yTicksTensor]
-//     })
+        return [valuesTensor, xTicksTensor, yTicksTensor]
+    })
 
-//     const values = await valuesEtc[0].array()
+    const values = await valuesEtc[0].array()
 
-//     const xTicks = await valuesEtc[1].array()
-//     const xTickLabels = xTicks.map((v) => (v / 1000).toFixed(1) + 'k sqft')
+    const xTicks = await valuesEtc[1].array()
+    const xTickLabels = xTicks.map((v) => (v / 1000).toFixed(1) + 'k sqft')
 
-//     const yTicks = await valuesEtc[2].array()
-//     const yTickLabels = yTicks.map((v) => '$' + (v / 1000).toFixed(0) + 'k')
+    const yTicks = await valuesEtc[2].array()
+    const yTickLabels = yTicks.map((v) => '$' + (v / 1000).toFixed(0) + 'k')
 
-//     const data = {
-//         values,
-//         xTickLabels,
-//         yTickLabels,
-//     }
+    tf.unstack(values, 2).forEach((vals, i) => {
+        const data = {
+            values: vals,
+            xTickLabels,
+            yTickLabels,
+        }
 
-//     tfvis.render.heatmap(
-//         {
-//             name: `${name} (full domain)`,
-//             tab: 'Predictions',
-//         },
-//         data,
-//         {
-//             domain: [0, 1],
-//             height: size,
-//         },
-//     )
+        tfvis.render.heatmap(
+            {
+                name: `Bedrooms: ${getClassName(i)} (local)`,
+                tab: 'Predictions',
+            },
+            data,
+            {
+                colorMap: 'greyscale',
+                height: size,
+            },
+        )
 
-//     tfvis.render.heatmap(
-//         {
-//             name: `${name} (local)`,
-//             tab: 'Predictions',
-//         },
-//         data,
-//         {
-//             height: size,
-//         },
-//     )
-// }
+        tfvis.render.heatmap(
+            {
+                name: `Bedrooms: ${getClassName(i)} (full domain)`,
+                tab: 'Predictions',
+            },
+            data,
+            {
+                colorMap: 'viridis',
+                domain: [1, 0], // [0, 1]
+                height: size,
+            },
+        )
+    })
+}
 
 async function multiClassClassification() {
     tfvis.visor().toggleFullScreen()
@@ -148,7 +151,7 @@ async function multiClassClassification() {
             y: record.price,
             class: record.bedrooms > 2 ? '3+' : '' + record.bedrooms,
         }))
-        .filter(({ class: c }) => !!c)
+        .filter(({ class: c }) => c !== '0')
 
     // Shuffle data
     const points = await pointsDataset.toArray()
@@ -168,7 +171,6 @@ async function multiClassClassification() {
     // Prepare labels (output)
     const labelValues = points.map((point) => getClassIndex(point.class))
     const labelTensor = tf.tidy(() => tf.oneHot(tf.tensor1d(labelValues, 'int32'), 3))
-    labelTensor.print()
 
     // Slitting into training and testing features data
     const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
@@ -225,13 +227,13 @@ async function multiClassClassification() {
 
         const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
             batchSize: 32, // 1024, default: 32
-            epochs: 500, // Overfitting
+            epochs: 150, // Overfitting?
             validationSplit: 0.2,
             callbacks: {
                 // onBatchEnd,
-                // onEpochBegin: () => {
-                //     plotPredictionHeatmap(model, normalizedFeatures)
-                // },
+                onEpochBegin: () => {
+                    plotPredictionHeatmap(model, normalizedFeatures)
+                },
                 onEpochEnd: (epoch, log) => {
                     console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
                     onEpochEnd(epoch, log)
@@ -248,18 +250,18 @@ async function multiClassClassification() {
         const testingLoss = testingResult[0]
         console.log('::: Testing loss:', testingLoss.toFixed(5))
 
-        // Save model TODO:
-        // const saveResults = await model.save('localstorage://mclass')
-        // console.log('::: Save results:', saveResults)
+        // Save model
+        const saveResults = await model.save('localstorage://mclass')
+        console.log('::: Save results:', saveResults)
     }
     else {
         // Load model
         model = await tf.loadLayersModel('localstorage://mclass')
     }
 
-    //     // Inspect model
-    //     model.summary()
-    //     tfvis.show.modelSummary({ name: 'Model Summary' }, model)
+    // Inspect model
+    model.summary()
+    tfvis.show.modelSummary({ name: 'Model Summary' }, model)
 
     //     // Make prediction
     //     const inputLivingSpaceValue = 2000
@@ -271,7 +273,7 @@ async function multiClassClassification() {
     //     console.log('::: Predicted output value:', (outputValue * 100).toFixed(1), '%')
 
     // Visualize data
-    //     await plotPredictionHeatmap(model, normalizedFeatures)
+    await plotPredictionHeatmap(model, normalizedFeatures)
 
     const allSeries = points.reduce((acc, point) => {
         const name = `Bedrooms: ${point.class}`

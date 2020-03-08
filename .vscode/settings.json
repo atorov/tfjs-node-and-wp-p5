@@ -10,6 +10,7 @@
         "devtools",
         "eqeqeq",
         "eurusd",
+        "greyscale",
         "heatmap",
         "linreg",
         "linspace",
@@ -31,6 +32,8 @@
         "technicalindicators",
         "tensorflow",
         "tfjs",
-        "tfvis"
+        "tfvis",
+        "vals",
+        "viridis"
     ]
 }
