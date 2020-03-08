@@ -1,5 +1,5 @@
-// import * as tf from '@tensorflow/tfjs'
-// import * as tfvis from '@tensorflow/tfjs-vis'
+import * as tf from '@tensorflow/tfjs'
+import * as tfvis from '@tensorflow/tfjs-vis'
 
 // function normalizeOne(tensor, min = tensor.min(), max = tensor.max()) {
 //     return {
@@ -121,24 +121,26 @@
 // }
 
 async function multiClassClassification() {
-    //     tfvis.visor().toggleFullScreen()
+    tfvis.visor().toggleFullScreen()
 
-    //     // Read data from CSV file
-    //     const dataset = tf.data.csv('/data/kc_house_data.csv')
+    // Read data from CSV file
+    const dataset = tf.data.csv('/data/kc_house_data.csv')
 
-    //     // Extract data
-    //     const pointsDataset = dataset.map((record) => ({
-    //         x: record.sqft_living,
-    //         y: record.price,
-    //         class: record.waterfront,
-    //     }))
+    // Extract data
+    const pointsDataset = dataset
+        .map((record) => ({
+            x: record.sqft_living,
+            y: record.price,
+            class: record.bedrooms > 2 ? '3+' : record.bedrooms,
+        }))
+        .filter(({ class: c }) => !!c)
 
-    //     // Shuffle data
-    //     const points = await pointsDataset.toArray()
-    //     if (points.length % 2) {
-    //         points.pop()
-    //     }
-    //     tf.util.shuffle(points)
+    // Shuffle data
+    const points = await pointsDataset.toArray()
+    if (points.length % 2) {
+        points.pop()
+    }
+    tf.util.shuffle(points)
 
     //     // Prepare features (inputs)
     //     const featureValues = points.map((point) => [point.x, point.y])
@@ -252,37 +254,37 @@ async function multiClassClassification() {
     //     const outputValue = outputTensor.dataSync()
     //     console.log('::: Predicted output value:', (outputValue * 100).toFixed(1), '%')
 
-    //     // Visualize data
+    // Visualize data
     //     await plotPredictionHeatmap(model, normalizedFeatures)
 
-    //     const allSeries = points.reduce((acc, point) => {
-    //         const name = `Waterfront: ${point.class}`
+    const allSeries = points.reduce((acc, point) => {
+        const name = `Bedrooms: ${point.class}`
 
-    //         return {
-    //             ...acc,
-    //             [name]: [...(acc[name] || []), point],
-    //         }
-    //     }, {})
+        return {
+            ...acc,
+            [name]: [...(acc[name] || []), point],
+        }
+    }, {})
 
-    //     tfvis.render.scatterplot(
-    //         {
-    //             name: 'Square feet vs House Price',
-    //             styles: {
-    //                 width: '100%',
-    //                 height: '100%',
-    //             },
-    //         },
-    //         {
-    //             values: Object.values(allSeries),
-    //             series: Object.keys(allSeries),
-    //         },
-    //         {
-    //             xLabel: 'Square feet',
-    //             yLabel: 'Price',
-    //             width: 800,
-    //             height: 600,
-    //         },
-    //     )
+    tfvis.render.scatterplot(
+        {
+            name: 'Square feet vs House Price',
+            styles: {
+                width: '100%',
+                height: '100%',
+            },
+        },
+        {
+            values: Object.values(allSeries),
+            series: Object.keys(allSeries),
+        },
+        {
+            xLabel: 'Square feet',
+            yLabel: 'Price',
+            width: 800,
+            height: 600,
+        },
+    )
 }
 
 export default multiClassClassification
