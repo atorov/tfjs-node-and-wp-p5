@@ -207,7 +207,7 @@ async function binaryClassification() {
 
         const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
             batchSize: 32, // 1024, default: 32
-            epochs: 500,
+            epochs: 500, // Overfitting
             validationSplit: 0.2,
             callbacks: {
                 // onBatchEnd,
