@@ -263,14 +263,16 @@ async function multiClassClassification() {
     model.summary()
     tfvis.show.modelSummary({ name: 'Model Summary' }, model)
 
-    //     // Make prediction
-    //     const inputLivingSpaceValue = 2000
-    //     const inputHousePriceValue = 3000000
-    //     const inputTensor = tf.tensor2d([[inputLivingSpaceValue, inputHousePriceValue]])
-    //     const normalizedInput = normalizeMany(inputTensor, normalizedFeatures.min, normalizedFeatures.max, ':NOW:')
-    //     const outputTensor = model.predict(normalizedInput.tensor)
-    //     const outputValue = outputTensor.dataSync()
-    //     console.log('::: Predicted output value:', (outputValue * 100).toFixed(1), '%')
+    // Make prediction
+    const inputLivingSpaceValue = 2000
+    const inputHousePriceValue = 2 * 1e6
+    const inputTensor = tf.tensor2d([[inputLivingSpaceValue, inputHousePriceValue]])
+    const normalizedInput = normalizeMany(inputTensor, normalizedFeatures.min, normalizedFeatures.max)
+    const outputTensor = model.predict(normalizedInput.tensor)
+    const outputValues = outputTensor.dataSync()
+
+    const outputString = [0, 1, 2].reduce((acc, i) => acc + `Likelihood of having ${getClassName(i)} bedrooms is:\t${(outputValues[i] * 100).toFixed(1)}%\n}`, '')
+    console.log('::: Predicted output value:\n', outputString)
 
     // Visualize data
     await plotPredictionHeatmap(model, normalizedFeatures)
