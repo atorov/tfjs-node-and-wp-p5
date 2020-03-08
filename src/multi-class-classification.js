@@ -1,38 +1,38 @@
 import * as tf from '@tensorflow/tfjs'
 import * as tfvis from '@tensorflow/tfjs-vis'
 
-// function normalizeOne(tensor, min = tensor.min(), max = tensor.max()) {
-//     return {
-//         tensor: tensor.sub(min).div(max.sub(min)),
-//         min,
-//         max,
-//     }
-// }
+function normalizeOne(tensor, min = tensor.min(), max = tensor.max()) {
+    return {
+        tensor: tensor.sub(min).div(max.sub(min)),
+        min,
+        max,
+    }
+}
 
-// function normalizeMany(tensor, min, max) {
-//     const dimensions = tensor.shape.length && tensor.shape[1]
+function normalizeMany(tensor, min, max) {
+    const dimensions = tensor.shape.length && tensor.shape[1]
 
-//     if (!dimensions || dimensions === 1) {
-//         return normalizeOne(tensor, min, max)
-//     }
+    if (!dimensions || dimensions === 1) {
+        return normalizeOne(tensor, min, max)
+    }
 
-//     const arrayOfTensors = tf.split(tensor, dimensions, 1)
+    const arrayOfTensors = tf.split(tensor, dimensions, 1)
 
-//     const normalized = arrayOfTensors.map((t, i) => normalizeOne(
-//         t,
-//         min ? min[i] : undefined,
-//         max ? max[i] : undefined,
-//     ))
+    const normalized = arrayOfTensors.map((t, i) => normalizeOne(
+        t,
+        min ? min[i] : undefined,
+        max ? max[i] : undefined,
+    ))
 
-//     const normalizedTensors = normalized.map(({ tensor: t }) => t)
-//     const returnTensor = tf.concat(normalizedTensors, 1)
+    const normalizedTensors = normalized.map(({ tensor: t }) => t)
+    const returnTensor = tf.concat(normalizedTensors, 1)
 
-//     return {
-//         tensor: returnTensor,
-//         min: normalized.map(({ min: m }) => m),
-//         max: normalized.map(({ max: m }) => m),
-//     }
-// }
+    return {
+        tensor: returnTensor,
+        min: normalized.map(({ min: m }) => m),
+        max: normalized.map(({ max: m }) => m),
+    }
+}
 
 // function denormalizeOne(tensor, min, max) {
 //     return tensor.mul(max.sub(min)).add(min)
@@ -50,6 +50,21 @@ import * as tfvis from '@tensorflow/tfjs-vis'
 
 // //     return tf.concat(denormalized, 1)
 // // }
+
+function getClassIndex(className) {
+    if (className === '1') return 0
+    if (className === '2') return 1
+    return 2
+}
+
+function getClassName(classIndex) {
+    switch (classIndex) {
+        case 0: return '1'
+        case 1: return '2'
+    }
+
+    return '3+'
+}
 
 // async function plotPredictionHeatmap(
 //     model,
@@ -131,7 +146,7 @@ async function multiClassClassification() {
         .map((record) => ({
             x: record.sqft_living,
             y: record.price,
-            class: record.bedrooms > 2 ? '3+' : record.bedrooms,
+            class: record.bedrooms > 2 ? '3+' : '' + record.bedrooms,
         }))
         .filter(({ class: c }) => !!c)
 
@@ -142,17 +157,18 @@ async function multiClassClassification() {
     }
     tf.util.shuffle(points)
 
-    //     // Prepare features (inputs)
-    //     const featureValues = points.map((point) => [point.x, point.y])
-    //     const featureTensor = tf.tensor2d(featureValues)
+    // Prepare features (inputs)
+    const featureValues = points.map((point) => [point.x, point.y])
+    const featureTensor = tf.tensor2d(featureValues)
 
-    //     // Prepare labels (output)
-    //     const labelValues = points.map((point) => point.class)
-    //     const labelTensor = tf.tensor2d(labelValues, [labelValues.length, 1])
+    // Normalize features (min-max)
+    const normalizedFeatures = normalizeMany(featureTensor)
+    featureTensor.dispose()
 
-    //     // Normalize features (min-max)
-    //     const normalizedFeatures = normalizeMany(featureTensor)
-    //     featureTensor.dispose()
+    // Prepare labels (output)
+    const labelValues = points.map((point) => getClassIndex(point.class))
+    const labelTensor = tf.tidy(() => tf.oneHot(tf.tensor1d(labelValues, 'int32'), 3))
+    labelTensor.print()
 
     //     // Slitting into training and testing features data
     //     const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
