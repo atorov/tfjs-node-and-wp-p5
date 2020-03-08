@@ -170,92 +170,92 @@ async function multiClassClassification() {
     const labelTensor = tf.tidy(() => tf.oneHot(tf.tensor1d(labelValues, 'int32'), 3))
     labelTensor.print()
 
-    //     // Slitting into training and testing features data
-    //     const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
+    // Slitting into training and testing features data
+    const [trainingFeatureTensor, testingFeatureTensor] = tf.split(normalizedFeatures.tensor, 2)
 
-    //     // Slitting into training and testing label data
-    //     const [trainingLabelTensor, testingLabelTensor] = tf.split(labelTensor, 2)
+    // Slitting into training and testing label data
+    const [trainingLabelTensor, testingLabelTensor] = tf.split(labelTensor, 2)
 
-    //     // Check if the model exists
-    //     const models = await tf.io.listModels()
-    //     const modelInfo = models['localstorage://bclass']
-    //     console.log('::: Model info:', modelInfo)
-    //     let model
-    //     if (!modelInfo) {
-    //         // Create model
-    //         model = tf.sequential()
+    // Check if the model exists
+    const models = await tf.io.listModels()
+    const modelInfo = models['localstorage://mclass']
+    console.log('::: Model info:', modelInfo)
+    let model
+    if (!modelInfo) {
+        // Create model
+        model = tf.sequential()
 
-    //         model.add(tf.layers.dense({
-    //             units: 10,
-    //             useBias: true,
-    //             activation: 'sigmoid',
-    //             inputDim: 2,
-    //         }))
-    //         model.add(tf.layers.dense({
-    //             units: 10,
-    //             activation: 'relu',
-    //             useBias: true,
-    //         }))
-    //         model.add(tf.layers.dense({
-    //             units: 1,
-    //             activation: 'sigmoid',
-    //             useBias: true,
-    //         }))
+        model.add(tf.layers.dense({
+            units: 10,
+            useBias: true,
+            activation: 'sigmoid',
+            inputDim: 2,
+        }))
+        model.add(tf.layers.dense({
+            units: 10,
+            useBias: true,
+            activation: 'sigmoid',
+        }))
+        model.add(tf.layers.dense({
+            units: 3,
+            useBias: true,
+            activation: 'softmax',
+        }))
 
-    //         const optimizer = tf.train.adam()
-    //         model.compile({
-    //             loss: 'binaryCrossentropy',
-    //             optimizer,
-    //             metrics: ['accuracy'],
-    //         })
+        const optimizer = tf.train.adam()
+        model.compile({
+            loss: 'binaryCrossentropy',
+            optimizer,
+            metrics: ['accuracy'],
+        })
 
-    //         model.compile({
-    //             loss: 'binaryCrossentropy',
-    //             optimizer: 'adam',
-    //         })
+        model.compile({
+            loss: 'categoricalCrossentropy',
+            optimizer: 'adam',
+        })
 
-    //         // Train model
-    //         const {
-    //             // onBatchEnd,
-    //             onEpochEnd,
-    //         } = tfvis.show.fitCallbacks(
-    //             { name: 'Training Performance' },
-    //             ['loss', 'val_loss'],
-    //         )
+        // Train model
+        const {
+            // onBatchEnd,
+            onEpochEnd,
+        } = tfvis.show.fitCallbacks(
+            { name: 'Training Performance' },
+            ['loss', 'val_loss'],
+        )
 
-    //         const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
-    //             batchSize: 32, // 1024, default: 32
-    //             epochs: 500, // Overfitting
-    //             validationSplit: 0.2,
-    //             callbacks: {
-    //                 // onBatchEnd,
-    //                 onEpochBegin: () => {
-    //                     plotPredictionHeatmap(model, normalizedFeatures)
-    //                 },
-    //                 onEpochEnd: (epoch, log) => {
-    //                     console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
-    //                     onEpochEnd(epoch, log)
-    //                 },
-    //             },
-    //         })
-    //         const trainingLoss = [...trainingResult.history.loss].pop()
-    //         const validationLoss = [...trainingResult.history.val_loss].pop()
-    //         console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
+        const trainingResult = await model.fit(trainingFeatureTensor, trainingLabelTensor, {
+            batchSize: 32, // 1024, default: 32
+            epochs: 500, // Overfitting
+            validationSplit: 0.2,
+            callbacks: {
+                // onBatchEnd,
+                // onEpochBegin: () => {
+                //     plotPredictionHeatmap(model, normalizedFeatures)
+                // },
+                onEpochEnd: (epoch, log) => {
+                    console.log(`::: Epoch ${epoch}: loss = ${log.loss.toFixed(5)} (${log.val_loss.toFixed(5)})`)
+                    onEpochEnd(epoch, log)
+                },
+            },
+        })
+        const trainingLoss = [...trainingResult.history.loss].pop()
+        const validationLoss = [...trainingResult.history.val_loss].pop()
+        console.log(`::: Training (Validation) loss: ${trainingLoss.toFixed(5)} (${validationLoss.toFixed(5)})`)
 
-    //         // Testing model
-    //         const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
-    //         // console.log('::: Testing result:', testingResult)
-    //         const testingLoss = testingResult[0]
-    //         console.log('::: Testing loss:', testingLoss.toFixed(5))
+        // Testing model
+        const testingResult = await model.evaluate(testingFeatureTensor, testingLabelTensor).dataSync()
+        // console.log('::: Testing result:', testingResult)
+        const testingLoss = testingResult[0]
+        console.log('::: Testing loss:', testingLoss.toFixed(5))
 
-    //         // Save model
-    //         const saveResults = await model.save('localstorage://bclass')
-    //         console.log('::: Save results:', saveResults)
-    //     }
-    //     else {
-    //         // Load model
-    //         model = await tf.loadLayersModel('localstorage://bclass')
-    //     }
+        // Save model TODO:
+        // const saveResults = await model.save('localstorage://mclass')
+        // console.log('::: Save results:', saveResults)
+    }
+    else {
+        // Load model
+        model = await tf.loadLayersModel('localstorage://mclass')
+    }
 
     //     // Inspect model
     //     model.summary()
