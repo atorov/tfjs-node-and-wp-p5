@@ -38,18 +38,18 @@ function denormalizeOne(tensor, min, max) {
     return tensor.mul(max.sub(min)).add(min)
 }
 
-function denormalizeMany(tensor, min, max) {
-    const dimensions = tensor.shape.length && tensor.shape[1]
+// function denormalizeMany(tensor, min, max) {
+//     const dimensions = tensor.shape.length && tensor.shape[1]
 
-    if (!dimensions || dimensions === 1) {
-        return denormalizeOne(tensor, min, max)
-    }
+//     if (!dimensions || dimensions === 1) {
+//         return denormalizeOne(tensor, min, max)
+//     }
 
-    const arrayOfTensors = tf.split(tensor, dimensions, 1)
-    const denormalized = arrayOfTensors.map((t, i) => denormalizeOne(t, min[i], max[i]))
+//     const arrayOfTensors = tf.split(tensor, dimensions, 1)
+//     const denormalized = arrayOfTensors.map((t, i) => denormalizeOne(t, min[i], max[i]))
 
-    return tf.concat(denormalized, 1)
-}
+//     return tf.concat(denormalized, 1)
+// }
 
 async function plotPredictionHeatmap(
     model,

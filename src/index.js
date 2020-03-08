@@ -1,7 +1,8 @@
 import * as tf from '@tensorflow/tfjs'
 // import * as tfvis from '@tensorflow/tfjs-vis'
 
-import binaryClassification from './binary-classification'
+// import binaryClassification from './binary-classification'
+import multiClassClassification from './multi-class-classification'
 
 // import './p5/main'
 
@@ -412,7 +413,10 @@ console.log('::: tfjs backend:', tf.getBackend());
     // })
 
     // Binary classification ...................................................
-    await binaryClassification()
+    // await binaryClassification()
+
+    // Multi-class classification ..............................................
+    await multiClassClassification()
 
     // .........................................................................
     console.log('::: tensors:', tf.memory().numTensors)
