@@ -243,14 +243,14 @@ async function binaryClassification() {
     model.summary()
     tfvis.show.modelSummary({ name: 'Model Summary' }, model)
 
-    // // Make prediction
-    //     const inputValue = 4000
-    //     const inputTensor = tf.tensor1d([inputValue])
-    //     const normalizedInput = normalize(inputTensor, normalizedFeatures.min, normalizedFeatures.max)
-    //     const normalizedOutput = model.predict(normalizedInput.tensor)
-    //     const outputTensor = denormalize(normalizedOutput, normalizedLabels.min, normalizedLabels.max)
-    //     const outputValue = outputTensor.dataSync()[0]
-    //     console.log('::: Predicted output value: $', (outputValue / 1e6).toFixed(3), 'M')
+    // Make prediction
+    const inputLivingSpaceValue = 2000
+    const inputHousePriceValue = 3000000
+    const inputTensor = tf.tensor2d([[inputLivingSpaceValue, inputHousePriceValue]])
+    const normalizedInput = normalizeMany(inputTensor, normalizedFeatures.min, normalizedFeatures.max, ':NOW:')
+    const outputTensor = model.predict(normalizedInput.tensor)
+    const outputValue = outputTensor.dataSync()
+    console.log('::: Predicted output value:', (outputValue * 100).toFixed(1), '%')
 
     // Visualize data
     await plotPredictionHeatmap(model, normalizedFeatures)
